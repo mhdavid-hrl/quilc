@@ -224,5 +224,4 @@
     (rpcq:start-server :dispatch-table dt
                        :listen-addresses (list (format nil "~A://~A~@[:~A~]" protocol host port))
                        :logger logger
-                       :timeout time-limit
-					   :debug t)))
+                       :timeout time-limit)))
