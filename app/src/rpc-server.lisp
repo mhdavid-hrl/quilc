@@ -56,7 +56,7 @@
                                              "specs" (rpcq::|TargetDevice-specs| target-device))
                                        :test #'equal))
          (cache (bt:with-lock-held ((cdr *chip-cache*))
-				  (chip-cache-or-create qpu-hash)))
+                  (chip-cache-or-create qpu-hash)))
          (chip-specification (cached-chip-chip cache))
          ;; Allow endpoint to override server's -Pnnn
          (protoquil (ecase protoquil
