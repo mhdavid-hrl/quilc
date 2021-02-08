@@ -97,14 +97,14 @@
    #:copy-instance                      ; GENERIC, METHOD
 
    #:qubit                              ; STRUCTURE
-   #:qubit-index                        ; READER
+   #:qubit-index                        ; ACCESSOR
    #:qubit=                             ; FUNCTION
    #:qubit-p                            ; FUNCTION
 
    #:constant                           ; STRUCTURE
    #:constant-value                     ; READER
    #:constant=                          ; FUNCTION
-   #:is-constant                        ; FUNCTION
+   #:is-constant                        ; FUNCTION (PREDICATE)
 
    #:label                              ; STRUCTURE
    #:label-name                         ; ACCESSOR
@@ -319,9 +319,9 @@
    #:print-operator-description         ; FUNCTION
 
    #:application                        ; ABSTRACT CLASS
-   #:application-operator               ; READER
-   #:application-parameters             ; READER
-   #:application-arguments              ; READER
+   #:application-operator               ; ACCESSOR
+   #:application-parameters             ; ACCESSOR
+   #:application-arguments              ; ACCESSOR
 
    #:unresolved-application             ; CLASS
 
@@ -350,7 +350,7 @@
    #:parsed-program-gate-definitions        ; READER
    #:parsed-program-circuit-definitions     ; READER
    #:parsed-program-memory-definitions      ; READER
-   #:parsed-program-executable-code         ; READER
+   #:parsed-program-executable-code         ; ACCESSOR
    #:print-parsed-program                   ; FUNCTION
 
    #:*print-parsed-program-text*        ; PARAMETER
@@ -398,9 +398,9 @@
 
   ;; parser.lisp
   (:export
-   #:tok
-   #:token-type
-   #:token-payload
+   #:tok                                ; FUNCTION (CONSTRUCTOR)
+   #:token-type                         ; ACCESSOR
+   #:token-payload                      ; ACCESSOR
    #:parse-quil-into-raw-program        ; FUNCTION
    #:quil-parse-error                   ; CONDITION
    #:resolve-safely                     ; FUNCTION
@@ -608,3 +608,143 @@
 
   (:export
    #:parse-qasm))
+
+
+
+
+
+;;;; The CL-Quil.SI Package
+
+;; This package is special: it "exports" symbols from the CL-Quil
+;; package for "system internal" use.  Note that these symbols are
+;; intended only to be used by various "friends" of the
+;; implementation. These symbols should be considered INTERNAL and are
+;; *not* to be considered exported in the usual sense. They are not
+;; supported for general use. Rather, they are for use only by
+;; closely-related systems that extend cl-quil and therefore need to
+;; access "internal" symbols.  Having such symbols cataloged here is
+;; preferable to simply accessing any symbol whatsoever via full
+;; qualification, ala the use of package name "quil" with double
+;; colons (quil::).
+
+(defpackage #:cl-quil.si (:nicknames #:quil.si))
+
+(defparameter *cl-quil.si-symbols*
+  '(
+    ;; cl-quil.lisp
+    #:ambiguous-definition-condition    ; CONDITION
+
+    ;; parser.lisp
+    #:apply-modifiers-to-operator       ; FUNCTION
+    #:*arithmetic-parameters*           ; VARIABLE
+    #:*definitions-allowed*             ; VARIABLE
+    #:disappointing-token-error         ; FUNCTION
+    #:*formal-arguments-allowed*        ; VARIABLE
+    #:gate-modifier-token-p             ; FUNCTION
+    #:match-line                        ; MACRO
+    #:parse-arithmetic-tokens           ; FUNCTION
+    #:*parse-context*                   ; VARIABLE
+    #:parse-indented-body               ; FUNCTION
+    #:parse-indented-entries            ; FUNCTION
+    #:parse-memory-or-formal-token      ; FUNCTION
+    #:parse-parameter-or-expression     ; FUNCTION
+    #:parse-parameters                  ; FUNCTION
+    #:parse-program-lines               ; FUNCTION
+    #:parse-qubit                       ; FUNCTION
+    #:*segment-encountered*             ; VARIABLE
+    #:take-until                        ; FUNCTION
+    #:take-while-from-end               ; FUNCTION
+    #:token                             ; STRUCTURE
+    #:token-pathname                    ; ACCESSOR
+
+    ;; analysis/type-safety.lisp
+
+    #:check-mref                        ; FUNCTION
+    #:enforce-mref-bounds               ; FUNCTION
+    #:find-descriptor-for-mref          ; FUNCTION
+    #:memory-segment-length             ; FUNCTION
+    #:type-check                        ; FUNCTION
+
+    ;; ast.lisp
+    #:delayed-expression-p              ; FUNCTION
+    #:evaluate-delayed-expression       ; FUNCTION
+    #:format-complex                    ; FUNCTION
+    #:make-delayed-expression           ; FUNCTION
+    #:map-de-params                     ; FUNCTION
+    #:operator-description-string       ; FUNCTION
+    #:print-instruction-sequence        ; FUNCTION
+    #:gate-application-resolution       ; READER
+    #:name-resolution                   ; SLOT NAME
+    #:parsed-program-executable-code    ; ACCESSOR
+
+    ;; analysis/expand-circuits.lisp
+    #:expand-circuits                   ; FUNCTION, transform
+
+    ;; analysis/expansion.lisp
+    #:*expansion-context*               ; VARIABLE
+    #:*expansion-depth*                 ; VARIABLE
+    #:*expansion-limit*                 ; VARIABLE
+    #:flag-on-update                    ; MACRO
+    #:instantiate-definition-body       ; FUNCTION
+    #:instantiate-instruction           ; GENERIC FUNCTION, METHOD
+    #:substitute-parameter              ; FUNCTION
+    #:transform-if                      ; FUNCTION
+
+    ;; analysis/resolve-objects.lisp
+    #:*in-definition-body*              ; VARIABLE
+    #:resolve-objects                   ; GENERIC FUNCTION, METHOD
+
+    ;; utilities.lisp
+    #:list=                             ; FUNCTION
+
+    ;; cl-quil.lisp
+    #:%parse-quil                       ; FUNCTION
+
+    ;; types.lisp
+    #:symbol-list                       ; TYPE
+
+    ;; classical-memory.lisp
+    #:quil-type-string                  ; FUNCTION
+
+    ;; gates.lisp
+    #:operator-description-gate-lifter  ; FUNCTION
+
+    ;; compilation-methods.lisp
+    #:give-up-compilation               ; FUNCTION
+
+    ;; chip/chip-specification.lisp
+    #:*global-compilers*                ; VARIABLE
+
+    ;; analysis/compress-qubits.lisp
+    #:%relabel-qubits                   ; GENERIC FUNCTION, METHOD
+    ))
+
+
+;;; Import these symbols into both the CL-Quil and CL-Quil.SI
+;;; packages.  Watch out for symbols that are already in the package,
+;;; and warn if any are exported already from Quil, meaning they don't
+;;; belong in the system-internals package. Then export them only from
+;;; the CL-Quil.SI package.
+
+(let* ((quil-pkg (find-package '#:cl-quil))
+       (quil-si-pkg (find-package '#:cl-quil.si))
+       (quil-import-list '())
+       (quil-si-import-list '())
+       where
+       symbol?)
+  (dolist (s *cl-quil.si-symbols*)
+    (multiple-value-setq (symbol? where)
+      (find-symbol (symbol-name s) quil-pkg))
+    (cond
+      (symbol?
+       (when (eq where ':external)
+         (warn "*** SI symbol ~s is exported from CL-Quil ***" symbol?))
+       (push symbol? quil-si-import-list))
+      (t
+       (push s quil-si-import-list)
+       (push s quil-import-list))))
+  (import quil-import-list quil-pkg)
+  (import quil-si-import-list quil-si-pkg)
+  (export quil-si-import-list quil-si-pkg))
+
+
